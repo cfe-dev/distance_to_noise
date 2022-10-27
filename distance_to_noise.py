@@ -269,12 +269,15 @@ class NoiseState(StateMachine):
 
     def map_dst_to_buzz(self) -> float:
         """map distance to buzz sound interval"""
-        return self.distance / 200
+        # return self.distance / 200
         # return (1-(20/(self.distance+20)))
+        x = self.distance
+        y = 8.65471 + (-0.001402315 - 8.65471)/(1 + (x/945.7285) ** 1.011464)
+        return y
 
     def map_dst_to_thunder(self) -> float:
         """map distance to thunder sound interval"""
-        return self.distance / 30
+        return self.distance / 40
 
 
 synth_interface = SynthInterface()
