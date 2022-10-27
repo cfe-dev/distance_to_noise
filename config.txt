@@ -1,0 +1,17 @@
+gain 3
+load "/usr/share/sounds/sf2/FluidR3_GM.sf2"
+select 0 1 0 0
+select 1 1 0 1
+select 2 1 0 2
+select 3 1 0 3
+select 4 1 0 4
+select 5 1 0 5
+select 6 1 0 6
+select 7 1 0 7
+select 8 1 0 8
+select 10 1 0 9
+select 11 1 0 10
+select 12 1 0 11
+select 13 1 0 12
+select 14 1 0 13
+select 15 1 0 14
