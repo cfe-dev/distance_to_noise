@@ -10,7 +10,6 @@ from time import sleep, time
 from threading import Thread
 # from threading import Event
 from gpiozero import DistanceSensor
-
 from statemachine import StateMachine, State
 
 
@@ -55,6 +54,9 @@ class SynthInterface():
 
     def buzz(self) -> None:
         """Instruct fluidsynth to make buzz sound"""
+        notecmd = FLUID_NOTEOFF.format(
+            channel=1, note=30).encode('utf-8')
+        self.fluidproc.stdin.write(notecmd)
         notecmd = FLUID_NOTEON.format(
             channel=1, note=30, volume=60).encode('utf-8')
         self.fluidproc.stdin.write(notecmd)
@@ -66,6 +68,9 @@ class SynthInterface():
 
     def thunder(self) -> None:
         """Instruct fluidsynth to make thunder sound"""
+        notecmd = FLUID_NOTEOFF.format(
+            channel=1, note=18).encode('utf-8')
+        self.fluidproc.stdin.write(notecmd)
         notecmd = FLUID_NOTEON.format(
             channel=1, note=18, volume=80).encode('utf-8')
         self.fluidproc.stdin.write(notecmd)
@@ -86,8 +91,8 @@ class NoiseGenerator():
         Creates Sound dependent on Sttes
     """
 
-    def __init__(self, synthif) -> None:
-        self.synthif = synthif
+    def __init__(self, synthif: SynthInterface) -> None:
+        self.synthif: SynthInterface = synthif
 
         self.interval_buzz: float = -1
         self.interval_thunder: float = -1
@@ -143,9 +148,9 @@ class NoiseState(StateMachine):
         NoiseState helper class
         StateMachine to track and control active States
     """
-    idle = State('Idle', initial=True)
-    lure = State('Lure')
-    scare = State('Scare')
+    idle: State = State('Idle', initial=True)
+    lure: State = State('Lure')
+    scare: State = State('Scare')
 
     detected = lure.from_(idle, scare)
     hooked = scare.from_(idle, lure)
@@ -156,12 +161,12 @@ class NoiseState(StateMachine):
 
         self.distance = 0
 
-        self.idle_since = 0
-        self.lure_since = 0
-        self.scare_since = 0
-        self.state_since = 0
+        self.idle_since: float = 0
+        self.lure_since: float = 0
+        self.scare_since: float = 0
+        self.state_since: float = 0
 
-        self.noisegen = noisegen
+        self.noisegen: NoiseGenerator = noisegen
 
     def start(self) -> None:
         """Start Threads """
