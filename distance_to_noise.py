@@ -55,10 +55,10 @@ class SynthInterface():
     def buzz(self) -> None:
         """Instruct fluidsynth to make buzz sound"""
         notecmd = FLUID_NOTEOFF.format(
-            channel=0, note=30).encode('utf-8')
+            channel=0, note=60).encode('utf-8')
         self.fluidproc.stdin.write(notecmd)
         notecmd = FLUID_NOTEON.format(
-            channel=0, note=30, volume=60).encode('utf-8')
+            channel=0, note=60, volume=70).encode('utf-8')
         self.fluidproc.stdin.write(notecmd)
         self.fluidproc.stdin.flush()
         # print("buzz")
@@ -69,10 +69,10 @@ class SynthInterface():
     def thunder(self) -> None:
         """Instruct fluidsynth to make thunder sound"""
         notecmd = FLUID_NOTEOFF.format(
-            channel=1, note=18).encode('utf-8')
+            channel=1, note=60).encode('utf-8')
         self.fluidproc.stdin.write(notecmd)
         notecmd = FLUID_NOTEON.format(
-            channel=1, note=18, volume=80).encode('utf-8')
+            channel=1, note=60, volume=80).encode('utf-8')
         self.fluidproc.stdin.write(notecmd)
         self.fluidproc.stdin.flush()
         # sleep(delay)
