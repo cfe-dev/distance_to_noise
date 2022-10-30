@@ -111,7 +111,7 @@ class SynthInterface():
         return round(note)
 
     def map_interval_to_vol(self, interval_buzz: float) -> int:
-        """Map intensity rating to actual Note"""
+        """Map intensity rating to actual Volume"""
         ratio: float = (FLUID_BUZZ_VOL_MAX - FLUID_BUZZ_VOL_MIN) / \
             (BUZZ_INTERVAL_MAX - BUZZ_INTERVAL_MIN)
         vol: float = FLUID_BUZZ_VOL_MAX - \
