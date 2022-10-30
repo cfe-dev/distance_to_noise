@@ -41,7 +41,6 @@ class SynthInterface():
 
     def __init__(self) -> None:
         self.fluidproc: subprocess.Popen = None
-        self.last_thunder: float = 0
 
     def start(self) -> None:
         """Start Subprocess """
