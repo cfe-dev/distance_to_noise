@@ -58,10 +58,8 @@ class SynthInterface():
             if linecnt > 1:
                 break
 
-    def buzz(self, interval_buzz: float) -> None:
+    def buzz(self, note: int, vol: int) -> None:
         """Instruct fluidsynth to make buzz sound"""
-        note: int = self.map_interval_to_note(interval_buzz)
-        vol: int = self.map_interval_to_vol(interval_buzz)
         notecmd = FLUID_NOTEOFF.format(
             channel=0, note=note).encode('utf-8')
         self.fluidproc.stdin.write(notecmd)
@@ -70,8 +68,8 @@ class SynthInterface():
         self.fluidproc.stdin.write(notecmd)
         self.fluidproc.stdin.flush()
         # print("buzz")
-        print(
-            f"Buzz Intv: {interval_buzz:.2f}; Note: {note:.2f}; Vol: {vol:.2f}")
+        # print(
+        #     f"Note: {note:.2f}; Vol: {vol:.2f}")
         # sleep(delay)
         # self.fluidproc.stdin.write(FLUID_NOTEOFF.encode('utf-8'))
         # self.fluidproc.stdin.flush()
@@ -96,28 +94,6 @@ class SynthInterface():
         # self.fluidproc.stdin.write(
         #     FLUID_ALLNOTESOFF.format(channel=1).encode('utf-8'))
         self.fluidproc.stdin.flush()
-
-    def map_interval_to_note(self, interval_buzz: float) -> int:
-        """Map intensity rating to actual Note"""
-        ratio: float = (FLUID_BUZZ_NOTE_MAX - FLUID_BUZZ_NOTE_MIN) / \
-            (BUZZ_INTERVAL_MAX - BUZZ_INTERVAL_MIN)
-        # note: float = ratio * \
-        # (interval_buzz - BUZZ_INTERVAL_MIN) + FLUID_BUZZ_NOTE_MIN
-        note: float = FLUID_BUZZ_NOTE_MAX - \
-            (ratio * (interval_buzz - BUZZ_INTERVAL_MIN))
-        note = min(note, FLUID_BUZZ_NOTE_MAX)
-        note = max(note, FLUID_BUZZ_NOTE_MIN)
-        return round(note)
-
-    def map_interval_to_vol(self, interval_buzz: float) -> int:
-        """Map intensity rating to actual Volume"""
-        ratio: float = (FLUID_BUZZ_VOL_MAX - FLUID_BUZZ_VOL_MIN) / \
-            (BUZZ_INTERVAL_MAX - BUZZ_INTERVAL_MIN)
-        vol: float = FLUID_BUZZ_VOL_MAX - \
-            (ratio * (interval_buzz - BUZZ_INTERVAL_MIN))
-        vol = min(vol, FLUID_BUZZ_VOL_MAX)
-        vol = max(vol, FLUID_BUZZ_VOL_MIN)
-        return round(vol)
 
 
 class NoiseGenerator():
@@ -156,9 +132,15 @@ class NoiseGenerator():
                     and diff >= self.interval_buzz - 0.1:
                 # print(cur_time - self.last_buzz)
                 self.last_buzz = cur_time
+                note: int = self.map_interval_to_note(
+                    interval_buzz=self.interval_buzz)
+                vol: int = self.map_interval_to_vol(
+                    interval_buzz=self.interval_buzz)
+                self.synthif.buzz(note=note, vol=vol)
                 # print("buzz")
                 # print(f"Buzz Intv: {self.interval_buzz:.2f}")
-                self.synthif.buzz(interval_buzz=self.interval_buzz)
+                # print(
+                #     f"Buzz Intv: {interval_buzz:.2f}; Note: {note:.2f}; Vol: {vol:.2f}")
                 sleep(self.interval_buzz)
             else:
                 sleep(delay)
@@ -179,6 +161,28 @@ class NoiseGenerator():
                 sleep(self.interval_thunder)
             else:
                 sleep(delay)
+
+    def map_interval_to_note(self, interval_buzz: float) -> int:
+        """Map intensity rating to actual Note"""
+        ratio: float = (FLUID_BUZZ_NOTE_MAX - FLUID_BUZZ_NOTE_MIN) / \
+            (BUZZ_INTERVAL_MAX - BUZZ_INTERVAL_MIN)
+        # note: float = ratio * \
+        # (interval_buzz - BUZZ_INTERVAL_MIN) + FLUID_BUZZ_NOTE_MIN
+        note: float = FLUID_BUZZ_NOTE_MAX - \
+            (ratio * (interval_buzz - BUZZ_INTERVAL_MIN))
+        note = min(note, FLUID_BUZZ_NOTE_MAX)
+        note = max(note, FLUID_BUZZ_NOTE_MIN)
+        return round(note)
+
+    def map_interval_to_vol(self, interval_buzz: float) -> int:
+        """Map intensity rating to actual Volume"""
+        ratio: float = (FLUID_BUZZ_VOL_MAX - FLUID_BUZZ_VOL_MIN) / \
+            (BUZZ_INTERVAL_MAX - BUZZ_INTERVAL_MIN)
+        vol: float = FLUID_BUZZ_VOL_MAX - \
+            (ratio * (interval_buzz - BUZZ_INTERVAL_MIN))
+        vol = min(vol, FLUID_BUZZ_VOL_MAX)
+        vol = max(vol, FLUID_BUZZ_VOL_MIN)
+        return round(vol)
 
 
 class NoiseState(StateMachine):
@@ -213,13 +217,13 @@ class NoiseState(StateMachine):
         thread_sensor = Thread(target=self.read_sensor, args=[0.1])
         thread_sensor.start()
 
-        thread_machine_update = Thread(target=self.update, args=[0.3])
+        thread_machine_update = Thread(target=self.update, args=[0.1])
         thread_machine_update.start()
 
-        thread_lure = Thread(target=self.check_lure, args=[0.6])
+        thread_lure = Thread(target=self.check_lure, args=[0.2])
         thread_lure.start()
 
-        thread_scare = Thread(target=self.check_scare, args=[0.6])
+        thread_scare = Thread(target=self.check_scare, args=[0.2])
         thread_scare.start()
 
     def update(self, delay: int) -> None:
@@ -231,11 +235,11 @@ class NoiseState(StateMachine):
                     and self.current_state != NoiseState.idle \
                     and diff >= 0.5:
                 self.gone()
-            if 50 <= self.distance < 350 \
+            if 70 <= self.distance < 350 \
                     and self.current_state != NoiseState.lure \
                     and diff >= 0.2:
                 self.detected()
-            if 0 < self.distance < 50 \
+            if 0 < self.distance < 70 \
                     and self.current_state != NoiseState.scare \
                     and diff >= 0.2:
                 self.hooked()
