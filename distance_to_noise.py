@@ -78,8 +78,8 @@ class SynthInterface():
             channel=channel, note=note, volume=vol).encode('utf-8')
         self.fluidproc.stdin.write(notecmd)
         self.fluidproc.stdin.flush()
-        print(
-            f"Channel: {channel:.2f}; Note: {note:.2f}; Vol: {vol:.2f}")
+        # print(
+        #     f"Channel: {channel:.2f}; Note: {note:.2f}; Vol: {vol:.2f}")
         # sleep(delay)
         # self.fluidproc.stdin.write(FLUID_NOTEOFF.encode('utf-8'))
         # self.fluidproc.stdin.flush()
@@ -201,9 +201,6 @@ class NoiseState(StateMachine):
         self.distance: float = 0
         self.last_distances: float = []
 
-        self.idle_since: float = 0
-        self.lure_since: float = 0
-        self.scare_since: float = 0
         self.state_since: float = 0
 
         self.noisegen: NoiseGenerator = noisegen
@@ -295,8 +292,8 @@ class NoiseState(StateMachine):
             if len(self.last_distances) > 10:
                 self.last_distances.pop(0)
             self.distance = min(self.last_distances)
-            print(
-                f"Distance: { noise_state.distance:.2f} ;; Time: { noise_state.state_since:.2f}")
+            # print(
+            #     f"Distance: { noise_state.distance:.2f} ;; Time: { noise_state.state_since:.2f}")
             sleep(delay)
 
     def map_dst_to_buzz(self):
