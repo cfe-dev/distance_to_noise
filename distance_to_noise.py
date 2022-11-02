@@ -30,13 +30,14 @@ THUNDER_INTERVAL_MIN = 9.6
 
 BUZZ_INTERVAL_MAX = 2.5
 BUZZ_INTERVAL_MIN = 0.05
+BUZZ_INTERVAL_STEP = 0.01
 BUZZ_NOTE_MAX = 60
 BUZZ_NOTE_MIN = 36
 BUZZ_VOL_MAX = 55
 BUZZ_VOL_MIN = 35
 
-STATE_DELAY_IDLE = 4
-STATE_DELAY_LURE = 1
+STATE_DELAY_IDLE = 10
+STATE_DELAY_LURE = 2
 STATE_DELAY_SCARE = 0.5
 
 
@@ -150,10 +151,7 @@ class NoiseGenerator():
             if self.interval_thunder != -1 \
                     and diff >= self.interval_thunder \
                     and diff >= THUNDER_INTERVAL_MIN:
-                # print(cur_time - self.last_thunder)
                 self.last_thunder = cur_time
-                # print("thunder")
-                # print(f"Thunder Intv: {self.interval_thunder:.2f}")
                 self.synthif.make_sound(channel=FLUID_CHANNEL_THUNDER)
 
             if self.interval_thunder != -1:
@@ -201,7 +199,7 @@ class NoiseState(StateMachine):
         super().__init__()
 
         self.distance: float = 0
-        self.last_distances: float = [10]
+        self.last_distances: float = []
 
         self.idle_since: float = 0
         self.lure_since: float = 0
@@ -214,7 +212,7 @@ class NoiseState(StateMachine):
         """Start Threads """
         self.noisegen.start()
 
-        thread_sensor = Thread(target=self.read_sensor, args=[0.3])
+        thread_sensor = Thread(target=self.read_sensor, args=[0.2])
         thread_sensor.start()
 
         thread_machine_update = Thread(target=self.update, args=[0.05])
@@ -242,12 +240,12 @@ class NoiseState(StateMachine):
 
             # sets lure noise interval
             if self.current_state == NoiseState.lure and self.distance > 0:
-                self.noisegen.interval_buzz = self.map_dst_to_buzz()
+                self.map_dst_to_buzz()
 
             # sets scare noise interval
             if self.current_state == NoiseState.scare and self.distance > 0:
-                self.noisegen.interval_buzz = self.map_dst_to_buzz()
-                self.noisegen.interval_thunder = self.map_dst_to_thunder()
+                self.map_dst_to_buzz()
+                self.map_dst_to_thunder()
 
             sleep(delay)
 
@@ -260,13 +258,13 @@ class NoiseState(StateMachine):
 
     def on_enter_lure(self) -> None:
         """entering lure State"""
-        self.noisegen.interval_buzz = self.map_dst_to_buzz()
+        self.map_dst_to_buzz()
         print("State: lure")
 
     def on_enter_scare(self) -> None:
         """entering scare State"""
-        self.noisegen.interval_buzz = self.map_dst_to_buzz()
-        self.noisegen.interval_thunder = self.map_dst_to_thunder()
+        self.map_dst_to_buzz()
+        self.map_dst_to_thunder()
         print("State: scare")
 
     def on_exit_scare(self) -> None:
@@ -290,32 +288,46 @@ class NoiseState(StateMachine):
         sensor = DistanceSensor(
             echo=PIN_ECHO, trigger=PIN_TRIGGER, max_distance=4)
         while True:
-            # self.last_distances has size 10, delay is 0.3s
-            # so we take the clostest distance of the last 3 seconds
+            # self.last_distances has size 5, delay is 0.3s
+            # so we take the clostest distance of the last 1.5 seconds
             # for interval calculations
             self.last_distances.append(sensor.distance * 100)
+            if len(self.last_distances) > 10:
+                self.last_distances.pop(0)
             self.distance = min(self.last_distances)
-            # print(
-            #     f"Distance: { noise_state.distance:.2f} ;; Time: { noise_state.state_since:.2f}")
+            print(
+                f"Distance: { noise_state.distance:.2f} ;; Time: { noise_state.state_since:.2f}")
             sleep(delay)
 
-    def map_dst_to_buzz(self) -> float:
+    def map_dst_to_buzz(self):
         """map distance to buzz sound interval"""
         buzz_interval: float = 0
         buzz_interval = self.distance / 200
-        # return (1-(20/(self.distance+20)))
-        # buzz_interval = 8.65471 + (-0.001402315 - 8.65471) / \
-        #     (1 + (self.distance/945.7285) ** 1.011464)
-        buzz_interval = min(buzz_interval, BUZZ_INTERVAL_MAX)
-        buzz_interval = max(buzz_interval, BUZZ_INTERVAL_MIN)
-        return buzz_interval
+        # # return (1-(20/(self.distance+20)))
+        # # buzz_interval = 8.65471 + (-0.001402315 - 8.65471) / \
+        # #     (1 + (self.distance/945.7285) ** 1.011464)
+        # buzz_interval = min(buzz_interval, BUZZ_INTERVAL_MAX)
+        # buzz_interval = max(buzz_interval, BUZZ_INTERVAL_MIN)
+        # return buzz_interval
+        # self.noisegen.interval_buzz = buzz_interval
+        if self.noisegen.interval_buzz != -1 and \
+                buzz_interval > self.noisegen.interval_buzz and \
+                buzz_interval - self.noisegen.interval_buzz > BUZZ_INTERVAL_STEP:
+            self.noisegen.interval_buzz = self.noisegen.interval_buzz + BUZZ_INTERVAL_STEP
+        else:
+            self.noisegen.interval_buzz = buzz_interval
+        self.noisegen.interval_buzz = min(
+            self.noisegen.interval_buzz, BUZZ_INTERVAL_MAX)
+        self.noisegen.interval_buzz = max(
+            self.noisegen.interval_buzz, BUZZ_INTERVAL_MIN)
 
-    def map_dst_to_thunder(self) -> float:
+    def map_dst_to_thunder(self):
         """map distance to thunder sound interval"""
-        thunder_interval: float = 0
-        thunder_interval = self.distance / 40
-        thunder_interval = max(thunder_interval, THUNDER_INTERVAL_MIN)
-        return thunder_interval
+        # thunder_interval: float = 0
+        # thunder_interval = self.distance / 40
+        # thunder_interval = max(thunder_interval, THUNDER_INTERVAL_MIN)
+        # return thunder_interval
+        self.noisegen.interval_thunder = self.distance / 40
 
 
 synth_interface = SynthInterface()
